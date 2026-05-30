@@ -15,13 +15,13 @@ jobs:
           chmod +x auto-checking.sh
           ./auto-checking.sh social-analyzer
       - name: commit changes
-        if: success()
-        run: |
-          git config user.name "qb-auto"
-          git config user.email "qbactions@gmail.com"
-          git add -- . :!auto-checking.sh
-          git commit -m "🤖"
-          git push
+  if: success()
+  run: |
+    git config user.name "qb-auto"
+    git config user.email "qbactions@gmail.com"
+    git add -- . :!auto-checking.sh
+    git commit -m "🤖"
+    git push https://${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git
       - name: delete auto-checking.sh
         if: always()
         run: |
