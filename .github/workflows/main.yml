@@ -8,16 +8,17 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: publish-main
+  cancel-in-progress: true
+
 jobs:
   publish:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          persist-credentials: true
           fetch-depth: 0
 
       - name: Install requirements
@@ -29,21 +30,25 @@ jobs:
           chmod +x auto-checking.sh
           ./auto-checking.sh social-analyzer
 
-      - name: Commit changes
+      - name: Commit and push
         run: |
           git config user.name "qb-auto"
           git config user.email "qbactions@gmail.com"
 
           git add -- . ':!auto-checking.sh'
 
-          git diff --staged --quiet || git commit -m "🤖"
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
 
-      - name: Sync and push changes
-        run: |
-          git pull --rebase origin main
+          git commit -m "🤖"
+
+          git fetch origin main
+          git rebase origin/main
+
           git push origin HEAD:main
 
       - name: Delete auto-checking.sh
         if: always()
-        run: |
-          [ -e auto-checking.sh ] && rm -f auto-checking.sh
+        run: rm -f auto-checking.sh
