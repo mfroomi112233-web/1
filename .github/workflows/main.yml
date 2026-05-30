@@ -1,28 +1,43 @@
-name: publish 
-on: [push]
+name: publish
+
+on:
+  push:
+
+permissions:
+  contents: write
+
 jobs:
   publish:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: install requirements
-        run: sudo apt-get install curl
-      - name: build and run
+          persist-credentials: true
+
+      - name: Install requirements
+        run: sudo apt-get update && sudo apt-get install -y curl
+
+      - name: Build and run
         run: |
-          curl https://raw.githubusercontent.com/qeeqbox/global-scripts/main/auto-checking.sh > auto-checking.sh
+          curl -L https://raw.githubusercontent.com/qeeqbox/global-scripts/main/auto-checking.sh -o auto-checking.sh
           chmod +x auto-checking.sh
           ./auto-checking.sh social-analyzer
-      - name: commit changes
-  if: success()
-  run: |
-    git config user.name "qb-auto"
-    git config user.email "qbactions@gmail.com"
-    git add -- . :!auto-checking.sh
-    git commit -m "🤖"
-    git push https://${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git
-      - name: delete auto-checking.sh
+
+      - name: Commit changes
+        run: |
+          git config user.name "qb-auto"
+          git config user.email "qbactions@gmail.com"
+
+          git add -- . ':!auto-checking.sh'
+
+          git diff --staged --quiet || git commit -m "🤖"
+
+      - name: Push changes
+        run: git push
+
+      - name: Delete auto-checking.sh
         if: always()
         run: |
-          [ -e auto-checking.sh ] && rm -- auto-checking.sh
+          [ -e auto-checking.sh ] && rm -f auto-checking.sh
